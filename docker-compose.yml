@@ -1,0 +1,200 @@
+version: '3.8'
+
+services:
+  # MongoDB Services
+  user-mongo:
+    image: mongo:6
+    container_name: user-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - user-mongo-data:/data/db
+    networks:
+      - nimbus-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  post-mongo:
+    image: mongo:6
+    container_name: post-mongo
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - post-mongo-data:/data/db
+    networks:
+      - nimbus-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  comment-mongo:
+    image: mongo:6
+    container_name: comment-mongo
+    restart: always
+    ports:
+      - "27019:27017"
+    volumes:
+      - comment-mongo-data:/data/db
+    networks:
+      - nimbus-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Application Services
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGO_URI=mongodb://user-mongo:27017/userdb
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - LOG_LEVEL=info
+    networks:
+      - nimbus-network
+    depends_on:
+      user-mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  post-service:
+    build:
+      context: ./post-service
+      dockerfile: Dockerfile
+    container_name: post-service
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGO_URI=mongodb://post-mongo:27017/postdb
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - LOG_LEVEL=info
+    networks:
+      - nimbus-network
+    depends_on:
+      post-mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  comment-service:
+    build:
+      context: ./comment-service
+      dockerfile: Dockerfile
+    container_name: comment-service
+    restart: always
+    ports:
+      - "3003:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGO_URI=mongodb://comment-mongo:27017/commentdb
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - LOG_LEVEL=info
+    networks:
+      - nimbus-network
+    depends_on:
+      comment-mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - USER_SERVICE_URL=http://user-service:3000
+      - POST_SERVICE_URL=http://post-service:3000
+      - COMMENT_SERVICE_URL=http://comment-service:3000
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-shared-service-secret}
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX=100
+      - REQUEST_TIMEOUT=5000
+      - MAX_RETRIES=3
+      - RETRY_DELAY=1000
+      - CIRCUIT_BREAKER_TIMEOUT=3000
+      - CIRCUIT_BREAKER_ERROR_THRESHOLD=50
+      - CIRCUIT_BREAKER_RESET_TIMEOUT=30000
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=*
+    networks:
+      - nimbus-network
+    depends_on:
+      user-service:
+        condition: service_healthy
+      post-service:
+        condition: service_healthy
+      comment-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    networks:
+      - nimbus-network
+    depends_on:
+      - api-gateway
+    # Note: Frontend Dockerfile not yet created
+
+networks:
+  nimbus-network:
+    driver: bridge
+
+volumes:
+  user-mongo-data:
+    name: user-mongo-data
+  post-mongo-data:
+    name: post-mongo-data
+  comment-mongo-data:
+    name: comment-mongo-data
