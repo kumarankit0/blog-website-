@@ -1,0 +1,30 @@
+{
+  "name": "comment-service",
+  "version": "1.0.0",
+  "description": "Comment microservice for Nimbus Blog",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "seed": "node seed/comments.seed.js"
+  },
+  "keywords": ["microservice", "comment"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3",
+    "jsonwebtoken": "^9.0.2",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "joi": "^17.11.0",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1",
+    "dotenv": "^16.3.1",
+    "express-mongo-sanitize": "^2.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
+

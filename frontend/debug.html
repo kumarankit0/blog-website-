@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nimbus Blog - Debug Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #6366f1;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .refresh-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #818cf8;
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .card h2 {
+            color: #b0b0b0;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #b0b0b0;
+            font-size: 0.875rem;
+        }
+
+        .metric-value {
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status.ok {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status.unknown {
+            background: #707070;
+            color: white;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .service-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .service-card h3 {
+            color: #6366f1;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .service-metric {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .service-metric-label {
+            color: #b0b0b0;
+        }
+
+        .service-metric-value {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #b0b0b0;
+        }
+
+        .error {
+            background: #ef4444;
+            color: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #707070;
+            font-size: 0.875rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>Nimbus Blog Debug Dashboard</span>
+            <button class="refresh-btn" id="refreshBtn" onclick="loadMetrics()">Refresh</button>
+        </h1>
+
+        <div id="error" style="display: none;"></div>
+
+        <div id="dashboard" class="dashboard">
+            <div class="card">
+                <h2>Gateway Metrics</h2>
+                <div id="gatewayMetrics" class="loading">Loading...</div>
+            </div>
+
+            <div class="card">
+                <h2>Service Health</h2>
+                <div id="serviceHealth" class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Service Metrics</h2>
+            <div id="serviceMetrics" class="loading">Loading...</div>
+        </div>
+
+        <div class="last-updated" id="lastUpdated"></div>
+    </div>
+
+    <script>
+        const GATEWAY_URL = window.location.origin || 'http://localhost:8080';
+        const SERVICE_URLS = {
+            user: 'http://localhost:3001',
+            post: 'http://localhost:3002',
+            comment: 'http://localhost:3003',
+        };
+
+        async function fetchJSON(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                return { error: error.message };
+            }
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat().format(num);
+        }
+
+        function renderGatewayMetrics(data) {
+            if (data.error) {
+                return `<div class="error">Error: ${data.error}</div>`;
+            }
+
+            const metrics = data.data || {};
+            return `
+                <div class="metric">
+                    <span class="metric-label">Total Requests</span>
+                    <span class="metric-value">${formatNumber(metrics.requests_total || 0)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Errors</span>
+                    <span class="metric-value">${formatNumber(metrics.errors_total || 0)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Upstream Failures</span>
+                    <span class="metric-value">${formatNumber(metrics.upstream_failures_total || 0)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Circuit Breakers Open</span>
+                    <span class="metric-value">${formatNumber(metrics.circuit_open_count || 0)}</span>
+                </div>
+            `;
+        }
+
+        async function checkServiceHealth(name, url) {
+            const data = await fetchJSON(`${url}/health`);
+            return {
+                name,
+                url,
+                status: data.status === 'ok' ? 'ok' : 'error',
+                error: data.error,
+            };
+        }
+
+        function renderServiceHealth(healthData) {
+            return healthData.map(service => `
+                <div class="service-card">
+                    <h3>${service.name}</h3>
+                    <div class="service-metric">
+                        <span class="service-metric-label">Status:</span>
+                        <span class="status ${service.status}">${service.status}</span>
+                    </div>
+                    ${service.error ? `<div style="color: #ef4444; font-size: 0.75rem; margin-top: 0.5rem;">${service.error}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function fetchServiceMetrics(name, url) {
+            const data = await fetchJSON(`${url}/metrics`);
+            return {
+                name,
+                url,
+                metrics: data.data || {},
+                error: data.error,
+            };
+        }
+
+        function renderServiceMetrics(metricsData) {
+            return `
+                <div class="services-grid">
+                    ${metricsData.map(service => `
+                        <div class="service-card">
+                            <h3>${service.name}</h3>
+                            ${service.error ? `
+                                <div style="color: #ef4444; font-size: 0.875rem;">Error: ${service.error}</div>
+                            ` : `
+                                <div class="service-metric">
+                                    <span class="service-metric-label">Requests:</span>
+                                    <span class="service-metric-value">${formatNumber(service.metrics.requests_total || 0)}</span>
+                                </div>
+                                <div class="service-metric">
+                                    <span class="service-metric-label">Errors:</span>
+                                    <span class="service-metric-value">${formatNumber(service.metrics.errors_total || 0)}</span>
+                                </div>
+                            `}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        async function loadMetrics() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = 'Loading...';
+
+            const errorDiv = document.getElementById('error');
+            errorDiv.style.display = 'none';
+
+            try {
+                // Load gateway metrics
+                const gatewayData = await fetchJSON(`${GATEWAY_URL}/metrics`);
+                document.getElementById('gatewayMetrics').innerHTML = renderGatewayMetrics(gatewayData);
+
+                // Check service health
+                const healthPromises = Object.entries(SERVICE_URLS).map(([name, url]) => 
+                    checkServiceHealth(name, url)
+                );
+                const healthData = await Promise.all(healthPromises);
+                document.getElementById('serviceHealth').innerHTML = renderServiceHealth(healthData);
+
+                // Fetch service metrics
+                const metricsPromises = Object.entries(SERVICE_URLS).map(([name, url]) => 
+                    fetchServiceMetrics(name, url)
+                );
+                const metricsData = await Promise.all(metricsPromises);
+                document.getElementById('serviceMetrics').innerHTML = renderServiceMetrics(metricsData);
+
+                // Update last updated time
+                document.getElementById('lastUpdated').textContent = 
+                    `Last updated: ${new Date().toLocaleTimeString()}`;
+
+            } catch (error) {
+                errorDiv.textContent = `Error loading metrics: ${error.message}`;
+                errorDiv.style.display = 'block';
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = 'Refresh';
+            }
+        }
+
+        // Load metrics on page load
+        loadMetrics();
+
+        // Auto-refresh every 5 seconds
+        setInterval(loadMetrics, 5000);
+    </script>
+</body>
+</html>
+

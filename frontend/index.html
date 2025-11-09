@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nimbus Blog - A modern microservices-based blog platform">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>Nimbus Blog</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo" data-route="feed">NIMBUS</a>
+            <div class="nav-search">
+                <input type="text" id="searchInput" placeholder="Search posts by title or tags..." class="search-input">
+                <button class="search-btn" onclick="app.handleSearch()">🔍</button>
+            </div>
+            <div class="nav-right" id="navRight">
+                <div class="nav-auth" id="navAuth">
+                    <a href="#" class="nav-link" data-route="login" id="loginLink">Login</a>
+                    <a href="#" class="nav-link" data-route="register" id="registerLink">Register</a>
+                </div>
+                <div class="nav-user" id="navUser" style="display: none;">
+                    <div class="user-menu">
+                        <button class="user-avatar-btn" id="userAvatarBtn">
+                            <span class="user-avatar" id="userAvatar">👤</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown">
+                            <a href="#" class="dropdown-item" data-route="create-post">✏️ Create Post</a>
+                            <a href="#" class="dropdown-item" data-route="profile">👤 Profile</a>
+                            <a href="#" class="dropdown-item" data-route="debug">📊 Debug</a>
+                            <hr class="dropdown-divider">
+                            <a href="#" class="dropdown-item" onclick="auth.logout()">🚪 Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav" id="bottomNav">
+        <a href="#" class="bottom-nav-link" data-route="feed">
+            <span class="icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="#" class="bottom-nav-link" data-route="feed">
+            <span class="icon">✏️</span>
+            <span>Create</span>
+        </a>
+        <a href="#" class="bottom-nav-link" data-route="feed" >
+            <span class="icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <div class="content-wrapper">
+            <!-- <div class="container">
+                
+                <div id="app" class="fade-in"></div>
+            </div> -->
+            <div class="container">
+                <!-- <div id="app" class="fade-in"> -->
+                  <!-- Static Blog Feed Section -->
+                  <div class="feed">
+                    <!-- <h2 class="feed-title">Latest Posts</h2> -->
+              
+                    <div class="post">
+                      <h3 class="post-title"> Exploring the Power of Microservices</h3>
+                      <p class="post-meta">by <span class="author">Ankit Kumar</span> · 2 hrs ago</p>
+                      <p class="post-content">
+                        Microservices architecture allows applications to be broken down into smaller, independent services that communicate with each other. This enables faster scaling and easier maintenance.
+                      </p>
+                      <button class="read-more">Read More</button>
+                    </div>
+              
+                    <div class="post">
+                      <h3 class="post-title"> How to Secure Your APIs with JWT</h3>
+                      <p class="post-meta">by <span class="author">Admin</span> · 1 day ago</p>
+                      <p class="post-content">
+                        JWT (JSON Web Tokens) are a simple yet powerful way to authenticate API requests between microservices. Learn how to issue and validate tokens securely.
+                      </p>
+                      <button class="read-more">Read More</button>
+                    </div>
+              
+                    <div class="post">
+                      <h3 class="post-title"> Docker Compose for Local Microservice Orchestration</h3>
+                      <p class="post-meta">by <span class="author">DevOps Team</span> · 3 days ago</p>
+                      <p class="post-content">
+                        Docker Compose makes it easy to define and run multi-container applications. Learn how to orchestrate microservices and their databases with a single YAML file.
+                      </p>
+                      <button class="read-more">Read More</button>
+                    </div>
+              
+                    <div class="post">
+                      <h3 class="post-title"> Building a RESTful API with Node.js and Express</h3>
+                      <p class="post-meta">by <span class="author">John Doe</span> · 4 days ago</p>
+                      <p class="post-content">
+                        Learn how to build RESTful APIs in Node.js with Express. We’ll explore CRUD routes, middleware, and best practices for scalable service design.
+                      </p>
+                      <button class="read-more">Read More</button>
+                    </div>
+              
+                    <div class="post">
+                      <h3 class="post-title"> React Frontend for Microservices Architecture</h3>
+                      <p class="post-meta">by <span class="author">Frontend Dev</span> · 5 days ago</p>
+                      <p class="post-content">
+                        React is perfect for building a clean interface that interacts with multiple microservices through an API Gateway. Here’s how to connect and manage state efficiently.
+                      </p>
+                      <button class="read-more">Read More</button>
+                    </div>
+              
+                    <div class="post">
+                      <h3 class="post-title"> Observability in Distributed Systems</h3>
+                      <p class="post-meta">by <span class="author">Tech Insights</span> · 6 days ago</p>
+                      <p class="post-content">
+                        Observability helps you monitor logs, metrics, and traces to maintain system health. Learn how to integrate monitoring tools for better visibility across services.
+                      </p>
+                      <button class="read-more">Read More</button>
+                    </div>
+                  </div>
+                <!-- </div> -->
+              </div>
+              
+            <!-- Right Sidebar (Desktop) -->
+            <aside class="right-sidebar" id="rightSidebar">
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">Trending Tags</h3>
+                    <div class="tags-list" id="trendingTags">
+                        <span class="tag">#microservices</span>
+                        <span class="tag">#javascript</span>
+                        <span class="tag">#nodejs</span>
+                        <span class="tag">#architecture</span>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">Who to Follow</h3>
+                    <div class="follow-list" id="whoToFollow">
+                        <!-- <div class="follow-item">
+                            <span class="follow-avatar">👤</span>
+                            <div class="follow-info">
+                                <div class="follow-name">John Doe</div>
+                                <div class="follow-meta">@johndoe</div>
+                            </div>
+                            <button class="follow-btn">Follow</button>
+                        </div> -->
+                        <div class="follow-section fade-in">
+                            <h2 class="follow-title">People to Follow</h2>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👤</span>
+                              <div class="follow-info">
+                                <div class="follow-name">John Doe</div>
+                                <div class="follow-meta">@johndoe</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👩‍💻</span>
+                              <div class="follow-info">
+                                <div class="follow-name">Emily Carter</div>
+                                <div class="follow-meta">@emilyc</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👨‍💻</span>
+                              <div class="follow-info">
+                                <div class="follow-name">Michael Lee</div>
+                                <div class="follow-meta">@mikelee</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👩</span>
+                              <div class="follow-info">
+                                <div class="follow-name">Sophia Turner</div>
+                                <div class="follow-meta">@sophiat</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👨</span>
+                              <div class="follow-info">
+                                <div class="follow-name">David Miller</div>
+                                <div class="follow-meta">@davidm</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👩‍🎨</span>
+                              <div class="follow-info">
+                                <div class="follow-name">Olivia Green</div>
+                                <div class="follow-meta">@oliviag</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👨‍🔬</span>
+                              <div class="follow-info">
+                                <div class="follow-name">James Parker</div>
+                                <div class="follow-meta">@jamesp</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👩‍🚀</span>
+                              <div class="follow-info">
+                                <div class="follow-name">Ava Johnson</div>
+                                <div class="follow-meta">@avaj</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👨‍🎓</span>
+                              <div class="follow-info">
+                                <div class="follow-name">Ethan Brown</div>
+                                <div class="follow-meta">@ethanb</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          
+                            <div class="follow-item">
+                              <span class="follow-avatar">👩‍🏫</span>
+                              <div class="follow-info">
+                                <div class="follow-name">Isabella White</div>
+                                <div class="follow-meta">@isabellaw</div>
+                              </div>
+                              <button class="follow-btn">Follow</button>
+                            </div>
+                          </div>
+                          
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
